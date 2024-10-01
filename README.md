@@ -38,9 +38,14 @@ AtlasHub é uma aplicação React interativa que utiliza a API REST Countries pa
 
 ## Instruções de Uso
 
-Primeiro clone o repositório.
+Primeiro abra o terminal e clone o repositório.
 ```bash
 $ git clone https://github.com/DaviRafaelDev/AtlasHub
+```
+
+Navegue até a pasta raiz do projeto.
+```bash
+$ cd AtlasHub
 ```
 
 Instale as dependências. Verifique se já têm [`nodejs`](https://nodejs.org/en/) & [`npm`](https://www.npmjs.com/) instalados no seu sistema.
