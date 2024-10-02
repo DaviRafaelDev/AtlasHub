@@ -2,13 +2,12 @@ import React, { useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, Switch, FormControlLabel } from '@mui/material';
 
 function GlobalSettings({ open, onClose, darkMode, setDarkMode, isPaginated, setIsPaginated }) {
-
   useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    const savedPaginated = localStorage.getItem('isPaginated') === 'true';
+    const savedDarkMode = localStorage.getItem('darkMode');
+    const savedPaginated = localStorage.getItem('isPaginated');
     
-    setDarkMode(savedDarkMode);
-    setIsPaginated(savedPaginated);
+    setDarkMode(savedDarkMode !== null ? savedDarkMode === 'true' : true);
+    setIsPaginated(savedPaginated !== null ? savedPaginated === 'true' : true);
   }, [setDarkMode, setIsPaginated]);
 
   useEffect(() => {

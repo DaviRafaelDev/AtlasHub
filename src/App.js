@@ -9,11 +9,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
-    return saved === 'true';
+    return saved !== null ? saved === 'true' : true;
   });
   const [isPaginated, setIsPaginated] = useState(() => {
     const saved = localStorage.getItem('isPaginated');
-    return saved === 'true';
+    return saved !== null ? saved === 'true' : true;
   });
   const [viewMode, setViewMode] = useState(() => {
     const saved = localStorage.getItem('viewMode');

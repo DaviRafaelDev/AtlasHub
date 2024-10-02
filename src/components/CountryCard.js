@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Card, 
@@ -17,30 +17,85 @@ function CountryCard({ countries, isPaginated }) {
   const [rowsPerPage, setRowsPerPage] = useState(12);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [displayedCountries, setDisplayedCountries] = useState([]);
+  const loader = useRef(null);
 
-  const sortedCountries = [...countries].sort((a, b) => {
-    if (sortBy === 'name') {
-      return sortOrder === 'asc' 
-        ? a.name.common.localeCompare(b.name.common) 
-        : b.name.common.localeCompare(a.name.common);
-    } else if (sortBy === 'population') {
-      return sortOrder === 'asc' 
-        ? a.population - b.population 
-        : b.population - a.population;
-    } else if (sortBy === 'area') {
-      return sortOrder === 'asc' 
-        ? a.area - b.area 
-        : b.area - a.area;
+  const sortCountries = useCallback((countriesToSort) => {
+    return [...countriesToSort].sort((a, b) => {
+      if (sortBy === 'name') {
+        return sortOrder === 'asc' 
+          ? a.name.common.localeCompare(b.name.common) 
+          : b.name.common.localeCompare(a.name.common);
+      } else if (sortBy === 'population') {
+        return sortOrder === 'asc' 
+          ? a.population - b.population 
+          : b.population - a.population;
+      } else if (sortBy === 'area') {
+        return sortOrder === 'asc' 
+          ? a.area - b.area 
+          : b.area - a.area;
+      }
+      return 0;
+    });
+  }, [sortBy, sortOrder]);
+
+  // Reset page and displayed countries when switching between paginated and infinite scroll
+  useEffect(() => {
+    setPage(0);
+    const sortedCountries = sortCountries(countries);
+    if (isPaginated) {
+      setDisplayedCountries(sortedCountries.slice(0, rowsPerPage));
+    } else {
+      setDisplayedCountries(sortedCountries.slice(0, 24)); // Initial load for infinite scroll
     }
-    return 0;
-  });
+  }, [countries, isPaginated, rowsPerPage, sortCountries]);
 
-  const paginatedCountries = isPaginated
-    ? sortedCountries.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-    : sortedCountries;
+  useEffect(() => {
+    setPage(0);
+    const sortedCountries = sortCountries(countries);
+    if (isPaginated) {
+      setDisplayedCountries(sortedCountries.slice(0, rowsPerPage));
+    } else {
+      setDisplayedCountries(sortedCountries.slice(0, 24));
+    }
+  }, [sortBy, sortOrder]);
+
+  const handleObserver = useCallback((entries) => {
+    const target = entries[0];
+    if (target.isIntersecting && !isPaginated) {
+      setPage((prev) => prev + 1);
+    }
+  }, [isPaginated]);
+
+  useEffect(() => {
+    const option = {
+      root: null,
+      rootMargin: "20px",
+      threshold: 0
+    };
+    const observer = new IntersectionObserver(handleObserver, option);
+    if (loader.current) observer.observe(loader.current);
+    
+    return () => {
+      if (loader.current) observer.unobserve(loader.current);
+    }
+  }, [handleObserver]);
+
+  useEffect(() => {
+    if (!isPaginated && page > 0) {
+      const sortedCountries = sortCountries(countries);
+      const nextCountries = sortedCountries.slice(
+        displayedCountries.length,
+        displayedCountries.length + 12
+      );
+      setDisplayedCountries(prev => [...prev, ...nextCountries]);
+    }
+  }, [page, isPaginated]);
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
+    const sortedCountries = sortCountries(countries);
+    setDisplayedCountries(sortedCountries.slice(newPage * rowsPerPage, (newPage + 1) * rowsPerPage));
   };
 
   return (
@@ -73,7 +128,7 @@ function CountryCard({ countries, isPaginated }) {
       </Box>
       
       <Grid container spacing={3}>
-        {paginatedCountries.map((country) => (
+        {displayedCountries.map((country) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={country.cca3}>
             <Card 
               component={Link} 
@@ -115,13 +170,15 @@ function CountryCard({ countries, isPaginated }) {
         ))}
       </Grid>
       
-      {isPaginated && (
+      {isPaginated ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
           <Button onClick={() => handlePageChange(0)} disabled={page === 0}>First</Button>
           <Button onClick={() => handlePageChange(page - 1)} disabled={page === 0}>Previous</Button>
-          <Button onClick={() => handlePageChange(page + 1)} disabled={page >= Math.ceil(sortedCountries.length / rowsPerPage) - 1}>Next</Button>
-          <Button onClick={() => handlePageChange(Math.ceil(sortedCountries.length / rowsPerPage) - 1)} disabled={page >= Math.ceil(sortedCountries.length / rowsPerPage) - 1}>Last</Button>
+          <Button onClick={() => handlePageChange(page + 1)} disabled={page >= Math.ceil(countries.length / rowsPerPage) - 1}>Next</Button>
+          <Button onClick={() => handlePageChange(Math.ceil(countries.length / rowsPerPage) - 1)} disabled={page >= Math.ceil(countries.length / rowsPerPage) - 1}>Last</Button>
         </Box>
+      ) : (
+        <div ref={loader} style={{ height: '20px', margin: '20px 0' }} />
       )}
     </div>
   );

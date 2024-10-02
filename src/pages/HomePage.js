@@ -28,7 +28,15 @@ function HomePage({ darkMode, setDarkMode, isPaginated, setIsPaginated, viewMode
   const isSmallerScreen = useMediaQuery(theme.breakpoints.down(432));
 
   useEffect(() => {
-    fetchAllCountries().then(setCountries);
+    let isMounted = true;
+    fetchAllCountries().then(data => {
+      if (isMounted) {
+        setCountries(data);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
